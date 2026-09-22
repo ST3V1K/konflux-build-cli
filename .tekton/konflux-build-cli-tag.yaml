@@ -7,23 +7,13 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/cancel-in-progress: "false"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "push" && target_branch == "main"
-      && (
-        ".tekton/**".pathChanged()
-        || "cmd/**".pathChanged()
-        || "pkg/**".pathChanged()
-        || "Dockerfile".pathChanged()
-        || "go.mod".pathChanged()
-        || "go.sum".pathChanged()
-        || "main.go".pathChanged()
-        || "VERSION".pathChanged()
-      )
+    pipelinesascode.tekton.dev/on-cel-expression: |-
+      event == "push" && target_branch.matches("refs/tags/v.*")
   labels:
     appstudio.openshift.io/application: konflux-build-cli
     appstudio.openshift.io/component: konflux-build-cli
     pipelines.appstudio.openshift.io/type: build
-  name: konflux-build-cli-on-push
+  name: konflux-build-cli-on-tag
   namespace: rhtap-build-tenant
 spec:
   params:
@@ -32,7 +22,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rhtap-build-tenant/konflux-build-cli:{{revision}}
+    value: quay.io/redhat-user-workloads/rhtap-build-tenant/konflux-build-cli:{{revision}}-{{git_tag}}
+  - name: apply-version-tags
+    value: "true"
+  - name: git-tag
+    value: "{{git_tag}}"
   - name: build-platforms
     value:
     - linux/x86_64
@@ -52,7 +46,7 @@ spec:
   taskRunTemplate:
     serviceAccountName: build-pipeline-konflux-build-cli
   workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
+    - name: git-auth
+      secret:
+        secretName: "{{ git_auth_secret }}"
 status: {}

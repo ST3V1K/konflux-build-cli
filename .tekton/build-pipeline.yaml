@@ -105,6 +105,14 @@ spec:
     type: string
     default: 'false'
     description: When "true", omit the build history (history timestamps, layer metadata, etc.) from the resulting image.
+  - name: apply-version-tags
+    type: string
+    default: "false"
+    description: When "true", set konflux.additional-tags from VERSION so apply-tags publishes that registry tag. Used on git tag (release) builds.
+  - name: git-tag
+    type: string
+    default: ""
+    description: Git tag that triggered the build, if any. When apply-version-tags is true and this is set, it must match VERSION (optional v prefix).
   results:
   - description: ""
     name: IMAGE_URL
@@ -190,6 +198,16 @@ spec:
       workspace: git-auth
     - name: netrc
       workspace: netrc
+  - name: get-build-params
+    taskRef:
+      name: get-build-params
+    params:
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: apply-version-tags
+      value: $(params.apply-version-tags)
+    - name: git-tag
+      value: $(params.git-tag)
   - matrix:
       params:
       - name: PLATFORM
@@ -238,6 +256,10 @@ spec:
       value: $(params.rewrite-timestamp)
     - name: OMIT_HISTORY
       value: $(params.omit-history)
+    - name: ANNOTATIONS
+      value: $(tasks.get-build-params.results.annotations[*])
+    - name: LABELS
+      value: $(tasks.get-build-params.results.labels[*])
     runAfter:
     - prefetch-dependencies
     taskRef:
