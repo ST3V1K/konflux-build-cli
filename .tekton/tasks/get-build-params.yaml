@@ -1,0 +1,84 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: get-build-params
+spec:
+  params:
+    - name: SOURCE_ARTIFACT
+      type: string
+      description: >-
+        The Trusted Artifact URI pointing to the artifact with the application source code.
+    - name: apply-version-tags
+      type: string
+      default: "false"
+      description: >-
+        When "true", set the konflux.additional-tags image label to the VERSION
+        file semver so apply-tags publishes that registry tag. Enable this on
+        git tag (release) builds only.
+    - name: git-tag
+      type: string
+      default: ""
+      description: >-
+        Git tag that triggered the build, if any. When apply-version-tags is
+        true and this is set, it must match VERSION (optional "v" prefix).
+  results:
+    - name: annotations
+      type: array
+      description: ANNOTATIONS array for buildah
+    - name: labels
+      type: array
+      description: LABELS array for buildah
+  steps:
+    - name: use-trusted-artifact
+      image: quay.io/konflux-ci/build-trusted-artifacts:latest@sha256:aa0807b76807f245bb19f229ec7e76b25f9458d23934d9d1ec0721b8fb50d8df
+      args:
+        - use
+        - $(params.SOURCE_ARTIFACT)=/tekton/home/source
+
+    - name: set-results
+      image: registry.access.redhat.com/ubi10/ubi-minimal:10.2-1782798957@sha256:b217fa65d8c21058887b18f005f587e47a17dd1281a5196ac88d01724a273dbd
+      env:
+        - name: ANNOTATIONS_RESULT
+          value: $(results.annotations.path)
+        - name: LABELS_RESULT
+          value: $(results.labels.path)
+        - name: APPLY_VERSION_TAGS
+          value: $(params.apply-version-tags)
+        - name: GIT_TAG
+          value: $(params.git-tag)
+      workingDir: /tekton/home/source
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+
+        version=$(cat VERSION)
+        version_major=$(cut -d . -f 1 <<< "$version")
+
+        printf '["org.opencontainers.image.version=%s"]' "$version" > "$ANNOTATIONS_RESULT"
+
+        labels=(
+          "org.opencontainers.image.version=${version}"
+          "version=${version}"
+          "version.major=${version_major}"
+        )
+
+        if [[ "$APPLY_VERSION_TAGS" == "true" ]]; then
+          git_tag="${GIT_TAG#refs/tags/}"
+          expected="${git_tag#v}"
+          if [[ -n "$git_tag" && "$expected" != "$version" ]]; then
+            echo "VERSION ($version) does not match git tag ($GIT_TAG)" >&2
+            exit 1
+          fi
+          labels+=("konflux.additional-tags=${version}")
+        fi
+
+        {
+          printf '['
+          for i in "${!labels[@]}"; do
+            if [[ "$i" -gt 0 ]]; then
+              printf ', '
+            fi
+            printf '"%s"' "${labels[$i]}"
+          done
+          printf ']'
+        } > "$LABELS_RESULT"
