@@ -17,6 +17,7 @@ metadata:
         || "go.mod".pathChanged()
         || "go.sum".pathChanged()
         || "main.go".pathChanged()
+        || "VERSION".pathChanged()
       )
   labels:
     appstudio.openshift.io/application: konflux-build-cli
