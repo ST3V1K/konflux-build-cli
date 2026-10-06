@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
-    build.appstudio.openshift.io/repo: https://github.com/konflux-ci/konflux-build-cli?rev={{revision}}
+    build.appstudio.openshift.io/repo: https://github.com/ST3V1K/konflux-build-cli?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/cancel-in-progress: "false"
@@ -14,7 +14,6 @@ metadata:
     appstudio.openshift.io/component: konflux-build-cli
     pipelines.appstudio.openshift.io/type: build
   name: konflux-build-cli-on-tag
-  namespace: rhtap-build-tenant
 spec:
   params:
   - name: git-url
@@ -22,7 +21,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rhtap-build-tenant/konflux-build-cli:{{revision}}-{{git_tag}}
+    value: quay.io/jnekvind-konflux/default-tenant/konflux-build-cli:{{revision}}-{{git_tag}}
   - name: apply-version-tags
     value: "true"
   - name: git-tag

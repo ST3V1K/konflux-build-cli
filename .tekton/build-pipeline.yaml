@@ -4,10 +4,10 @@ metadata:
   name: build-pipeline
 spec:
   description: |
-    This pipeline is ideal for building multi-arch container images from a Containerfile while maintaining trust after pipeline customization.
+    This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
 
-    _Uses `buildah` to create a multi-platform container image leveraging [trusted artifacts](https://konflux-ci.dev/architecture/ADR/0036-trusted-artifacts.html). It also optionally creates a source image and runs some build-time tests. This pipeline requires that the [multi platform controller](https://github.com/konflux-ci/multi-platform-controller) is deployed and configured on your Konflux instance. Information is shared between tasks using OCI artifacts instead of PVCs. EC will pass the [`trusted_task.trusted`](https://conforma.dev/docs/policy/packages/release_trusted_task.html#trusted_task__trusted) policy as long as all data used to build the artifact is generated from trusted tasks.
-    This pipeline is pushed as a Tekton bundle to [quay.io](https://quay.io/repository/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta?tab=tags)_
+    _Uses `buildah` to create a container image leveraging [trusted artifacts](https://konflux-ci.dev/architecture/ADR/0036-trusted-artifacts.html). It also optionally creates a source image and runs some build-time tests. Information is shared between tasks using OCI artifacts instead of PVCs. EC will pass the [`trusted_task.trusted`](https://conforma.dev/docs/policy/packages/release_trusted_task.html#trusted_task__trusted) policy as long as all data used to build the artifact is generated from trusted tasks.
+    This pipeline is pushed as a Tekton bundle to [quay.io](https://quay.io/repository/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta?tab=tags)_
   params:
   - description: Source Repository URL
     name: git-url
@@ -208,12 +208,7 @@ spec:
       value: $(params.apply-version-tags)
     - name: git-tag
       value: $(params.git-tag)
-  - matrix:
-      params:
-      - name: PLATFORM
-        value:
-        - $(params.build-platforms)
-    name: build-images
+  - name: build-images
     params:
     - name: IMAGE
       value: $(params.output-image)
@@ -248,8 +243,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: IMAGE_APPEND_PLATFORM
-      value: "true"
     - name: SOURCE_DATE_EPOCH
       value: $(params.source-date-epoch)
     - name: REWRITE_TIMESTAMP
@@ -265,9 +258,9 @@ spec:
     taskRef:
       params:
       - name: name
-        value: buildah-remote-oci-ta
+        value: buildah-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.12.1@sha256:f34d44fd81608a76644b3af2784ee9d3ffb7eae57e33242b0b1ef1aeca57c9ac
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.12.1@sha256:9eef3bf4c8a6a28605c713d56048fef5349bc4c791f289d8b95396ab039eda6b
       - name: kind
         value: task
       resolver: bundles
@@ -279,7 +272,7 @@ spec:
       value: $(params.build-image-index)
     - name: IMAGES
       value:
-      - $(tasks.build-images.results.IMAGE_REF[*])
+      - $(tasks.build-images.results.IMAGE_REF)
     - name: BUILDAH_FORMAT
       value: $(params.buildah-format)
     runAfter:
