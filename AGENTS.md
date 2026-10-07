@@ -24,6 +24,7 @@ Run these commands before submitting changes:
 - `make unit-test` — run all unit tests
 - `make lint` — run golangci-lint (installs automatically)
 - `make fmt` — format code
+- `CGO_ENABLED=0 GOFLAGS="-tags=exclude_graphdriver_btrfs" go fix ./...` — modernize Go code
 
 ## Integration Test Conventions
 
