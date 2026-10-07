@@ -26,6 +26,9 @@ Run these commands before submitting changes:
 - `make fmt` — format code
 - `CGO_ENABLED=0 GOFLAGS="-tags=exclude_graphdriver_btrfs" go fix ./...` — modernize Go code
 
+> **Note:** When adding or changing CI checks in `.github/workflows/`, update
+> this list to match. Agents and contributors rely on it to pass CI.
+
 ## Integration Test Conventions
 
 When asserting on build stderr in `image build` integration tests, call
