@@ -1,14 +1,17 @@
 # Build the url-preview sample service binary.
-FROM docker.io/library/golang:1.26-alpine AS builder
+FROM registry.access.redhat.com/ubi10/go-toolset:1.26.7@sha256:de00e16138966f9fed6bca2d22d28f6cc0d50b26ef6977398e2d8980d80be75f AS builder
+
 ARG TARGETOS
 ARG TARGETARCH
 
+USER 1001
+
 WORKDIR /workspace
 
-COPY go.mod go.sum ./
+COPY --chown=1001:0 go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY --chown=1001:0 . .
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -o url-preview .
 
