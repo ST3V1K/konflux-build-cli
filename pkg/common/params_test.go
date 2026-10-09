@@ -578,6 +578,29 @@ func TestParseParameters(t *testing.T) {
 		g.Expect(params.ArrayParam).To(Equal([]string{"item1", "item2"}))
 	})
 
+	// Make sure Tekton parameters with default value "" don't break KBC array parameter parsing.
+	// https://github.com/konflux-ci/container-build-catalog/pull/169
+	t.Run("should parse array parameter with empty string value", func(t *testing.T) {
+		g := NewWithT(t)
+
+		cmd := &cobra.Command{}
+		cmd.Flags().StringArray("arrayParam", nil, "usage")
+		cmd.Flags().Set("arrayParam", "")
+
+		paramsConfig := map[string]Parameter{
+			"arrayParam": {
+				Name:     "arrayParam",
+				TypeKind: reflect.Array,
+			},
+		}
+
+		params := &TestParams{}
+		err := ParseParameters(cmd, paramsConfig, params)
+
+		g.Expect(err).ToNot(HaveOccurred())
+		g.Expect(params.ArrayParam).To(BeEmpty())
+	})
+
 	t.Run("should parse array parameter from environment variable", func(t *testing.T) {
 		g := NewWithT(t)
 
